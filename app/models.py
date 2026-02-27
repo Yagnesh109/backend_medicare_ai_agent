@@ -58,6 +58,8 @@ class ErrorResponse(BaseModel):
 class MedicalAssistantChatRequest(BaseModel):
     user_message: str = Field(..., min_length=2, max_length=4000)
     prescription_text: str = Field(default="", max_length=6000)
+    prescription_image_base64: str = Field(default="", max_length=6000000)
+    prescription_image_mime_type: str = Field(default="", max_length=50)
     history: list[str] = Field(default_factory=list, max_length=12)
 
     @field_validator("user_message")
@@ -73,6 +75,19 @@ class MedicalAssistantChatRequest(BaseModel):
     def _clean_prescription_text(cls, value: str) -> str:
         return value.strip()
 
+    @field_validator("prescription_image_base64")
+    @classmethod
+    def _clean_prescription_image_base64(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("prescription_image_mime_type")
+    @classmethod
+    def _clean_prescription_image_mime_type(cls, value: str) -> str:
+        cleaned = value.strip().lower()
+        if cleaned and cleaned not in {"image/jpeg", "image/png", "image/jpg"}:
+            raise ValueError("Only JPEG and PNG images are supported.")
+        return cleaned
+
     @field_validator("history")
     @classmethod
     def _clean_history(cls, value: list[str]) -> list[str]:
@@ -87,6 +102,7 @@ class MedicalAssistantChatResult(BaseModel):
     diet_guidance: list[str] = Field(default_factory=list)
     exercise_guidance: list[str] = Field(default_factory=list)
     precautions: list[str] = Field(default_factory=list)
+    image_received: bool = False
     emergency: bool = False
     disclaimer: str = (
         "Educational guidance only, not a diagnosis or emergency service. "

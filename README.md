@@ -65,7 +65,8 @@ Example body:
 ```json
 {
   "user_message": "Please explain this prescription and what each medicine is for.",
-  "prescription_text": "Tab Metformin 500mg once daily after dinner. Cap Omeprazole 20mg before breakfast.",
+  "prescription_image_base64": "<base64_of_image>",
+  "prescription_image_mime_type": "image/jpeg",
   "history": [
     "I have mild acidity.",
     "Can I exercise daily?"

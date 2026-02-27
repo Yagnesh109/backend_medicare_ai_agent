@@ -23,6 +23,11 @@ class MedicalChatAgent:
 
         try:
             llm_result = await self._chat_with_gemini(payload)
+            llm_result = llm_result.model_copy(
+                update={
+                    "image_received": bool(payload.prescription_image_base64),
+                }
+            )
             return MedicalChatOutput(result=llm_result, source="gemini")
         except Exception:
             return MedicalChatOutput(
@@ -34,8 +39,18 @@ class MedicalChatAgent:
         self, payload: MedicalAssistantChatRequest
     ) -> MedicalAssistantChatResult:
         prompt = self._build_prompt(payload)
+        parts = [{"text": prompt}]
+        if payload.prescription_image_base64 and payload.prescription_image_mime_type:
+            parts.append(
+                {
+                    "inline_data": {
+                        "mime_type": payload.prescription_image_mime_type,
+                        "data": payload.prescription_image_base64,
+                    }
+                }
+            )
         body = {
-            "contents": [{"parts": [{"text": prompt}]}],
+            "contents": [{"parts": parts}],
             "generationConfig": {
                 "temperature": 0.25,
                 "responseMimeType": "application/json",
@@ -59,6 +74,11 @@ class MedicalChatAgent:
     def _build_prompt(self, payload: MedicalAssistantChatRequest) -> str:
         history_block = "\n".join(f"- {entry}" for entry in payload.history) or "none"
         prescription = payload.prescription_text or "none"
+        image_note = (
+            "A prescription image is attached. Extract relevant medicine details from it."
+            if payload.prescription_image_base64 and payload.prescription_image_mime_type
+            else "No prescription image attached."
+        )
         return (
             "You are an experienced medication and wellness assistant.\n"
             "Goals:\n"
@@ -80,6 +100,7 @@ class MedicalChatAgent:
             "- No markdown, no extra keys.\n"
             "- Never prescribe dosage changes as a doctor replacement.\n"
             "- Keep each list concise (max 6 points).\n\n"
+            f"Image context: {image_note}\n"
             f"Prescription text:\n{prescription}\n\n"
             f"Conversation history:\n{history_block}\n\n"
             f"User question:\n{payload.user_message}\n"
@@ -124,6 +145,7 @@ class MedicalChatAgent:
             "diet_guidance": self._listify(data.get("diet_guidance")),
             "exercise_guidance": self._listify(data.get("exercise_guidance")),
             "precautions": self._listify(data.get("precautions")),
+            "image_received": False,
             "emergency": bool(data.get("emergency", False)),
         }
 
@@ -179,5 +201,6 @@ class MedicalChatAgent:
                 "Check drug interactions before adding OTC medicines or supplements.",
                 "Report allergy symptoms such as rash, swelling, or breathing trouble urgently.",
             ],
+            image_received=bool(payload.prescription_image_base64),
             emergency=emergency,
         )
