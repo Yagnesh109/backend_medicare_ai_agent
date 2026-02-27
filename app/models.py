@@ -54,3 +54,49 @@ class ErrorResponse(BaseModel):
     ok: bool = False
     error: str
 
+
+class MedicalAssistantChatRequest(BaseModel):
+    user_message: str = Field(..., min_length=2, max_length=4000)
+    prescription_text: str = Field(default="", max_length=6000)
+    history: list[str] = Field(default_factory=list, max_length=12)
+
+    @field_validator("user_message")
+    @classmethod
+    def _clean_user_message(cls, value: str) -> str:
+        cleaned = value.strip()
+        if len(cleaned) < 2:
+            raise ValueError("Message is too short.")
+        return cleaned
+
+    @field_validator("prescription_text")
+    @classmethod
+    def _clean_prescription_text(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("history")
+    @classmethod
+    def _clean_history(cls, value: list[str]) -> list[str]:
+        cleaned = [entry.strip() for entry in value if entry.strip()]
+        return cleaned[:12]
+
+
+class MedicalAssistantChatResult(BaseModel):
+    reply: str
+    medicine_uses: list[str] = Field(default_factory=list)
+    health_guidance: list[str] = Field(default_factory=list)
+    diet_guidance: list[str] = Field(default_factory=list)
+    exercise_guidance: list[str] = Field(default_factory=list)
+    precautions: list[str] = Field(default_factory=list)
+    emergency: bool = False
+    disclaimer: str = (
+        "Educational guidance only, not a diagnosis or emergency service. "
+        "For severe symptoms, seek immediate medical care."
+    )
+
+
+class MedicalAssistantChatResponse(BaseModel):
+    ok: bool = True
+    data: MedicalAssistantChatResult
+    source: Literal["gemini", "fallback"] = "gemini"
+    generated_at: datetime = Field(default_factory=datetime.utcnow)
+

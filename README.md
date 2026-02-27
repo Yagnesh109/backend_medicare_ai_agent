@@ -1,17 +1,20 @@
-# Side-Effect AI Agent Backend
+# MediCare AI Backend
 
-Python FastAPI backend for medicine side-effect analysis.
+Python FastAPI backend for:
+- medicine side-effect analysis
+- AI medical assistant chat (prescription + medicine use + diet/exercise guidance)
 
 ## Features
-- Accepts medicine + symptom input from your Flutter app.
-- Uses Gemini API for analysis.
-- Returns:
+- Accepts medicine + symptom input for side-effect analysis.
+- Provides chat guidance on medicines, health, exercise, food, and diet.
+- Uses Gemini API only in backend (no direct client API calls).
+- Side-effect endpoint returns:
   - `severity`
   - `possible_reasons`
   - `immediate_actions`
   - `doctor_consultation_needed`
   - `urgency`
-- Has safe fallback logic if AI call fails.
+- Both endpoints have safe fallback logic if AI call fails.
 
 ## 1) Setup
 ```bash
@@ -34,7 +37,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 Health check:
 `GET http://localhost:8000/health`
 
-## 3) Analyze endpoint
+## 3) Side-effect endpoint
 `POST /api/v1/side-effects/analyze`
 
 Example body:
@@ -52,8 +55,41 @@ Example body:
 ```
 
 ## 4) Use from Flutter
-Call your deployed URL:
+Call your deployed backend URL:
 `https://<your-backend-domain>/api/v1/side-effects/analyze`
+
+## 5) Medical assistant chat endpoint
+`POST /api/v1/assistant/chat`
+
+Example body:
+```json
+{
+  "user_message": "Please explain this prescription and what each medicine is for.",
+  "prescription_text": "Tab Metformin 500mg once daily after dinner. Cap Omeprazole 20mg before breakfast.",
+  "history": [
+    "I have mild acidity.",
+    "Can I exercise daily?"
+  ]
+}
+```
+
+Response body:
+```json
+{
+  "ok": true,
+  "source": "gemini",
+  "data": {
+    "reply": "....",
+    "medicine_uses": ["..."],
+    "health_guidance": ["..."],
+    "diet_guidance": ["..."],
+    "exercise_guidance": ["..."],
+    "precautions": ["..."],
+    "emergency": false,
+    "disclaimer": "Educational guidance only, not a diagnosis or emergency service. For severe symptoms, seek immediate medical care."
+  }
+}
+```
 
 ## Important
 This service is decision support only. It is not a diagnosis system.

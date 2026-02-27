@@ -4,17 +4,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.models import (
     ErrorResponse,
+    MedicalAssistantChatRequest,
+    MedicalAssistantChatResponse,
     SideEffectAnalysisRequest,
     SideEffectAnalysisResponse,
 )
 from app.services.ai_agent import SideEffectAgent
+from app.services.medical_chat_agent import MedicalChatAgent
 
 app = FastAPI(
-    title="MediCare Side-Effect Agent API",
+    title="MediCare Health Assistant API",
     version="1.0.0",
     description=(
-        "Analyzes medicine side-effect reports and returns severity, likely reasons, "
-        "and consultation guidance."
+        "Provides AI-assisted side-effect analysis and medication wellness chat guidance."
     ),
 )
 
@@ -27,6 +29,7 @@ app.add_middleware(
 )
 
 agent = SideEffectAgent()
+medical_chat_agent = MedicalChatAgent()
 
 
 @app.get("/health")
@@ -51,4 +54,23 @@ async def analyze_side_effects(
         )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Analysis failed: {exc}") from exc
+
+
+@app.post(
+    "/api/v1/assistant/chat",
+    response_model=MedicalAssistantChatResponse,
+    responses={500: {"model": ErrorResponse}},
+)
+async def medical_assistant_chat(
+    payload: MedicalAssistantChatRequest,
+) -> MedicalAssistantChatResponse:
+    try:
+        output = await medical_chat_agent.chat(payload)
+        return MedicalAssistantChatResponse(
+            ok=True,
+            data=output.result,
+            source=output.source,  # type: ignore[arg-type]
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Assistant failed: {exc}") from exc
 
