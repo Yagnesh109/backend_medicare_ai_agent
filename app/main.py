@@ -147,17 +147,19 @@ async def voice_twiml(
         )
 
     vr = VoiceResponse()
+    base = settings.public_base_url.rstrip("/")
+    gather_action_url = (
+        f"{base}/api/v1/voice/gather"
+        f"?patient_name={patient_display}"
+        f"&medicine_name={medicine_display}"
+        f"&scheduled_time={time_display}"
+        f"&date_key={date_display}"
+    )
     gather = Gather(
         input="speech dtmf",
         timeout=60,
         speech_timeout="auto",
-        action=(
-            "/api/v1/voice/gather"
-            f"?patient_name={patient_display}"
-            f"&medicine_name={medicine_display}"
-            f"&scheduled_time={time_display}"
-            f"&date_key={date_display}"
-        ),
+        action=gather_action_url,
         method="POST",
     )
     gather.say(intro, voice="alice", language="en-IN")
