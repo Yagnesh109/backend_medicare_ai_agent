@@ -57,6 +57,7 @@ class ErrorResponse(BaseModel):
 
 class MedicalAssistantChatRequest(BaseModel):
     user_message: str = Field(..., min_length=2, max_length=4000)
+    ai_consent: bool = False
     prescription_text: str = Field(default="", max_length=6000)
     prescription_image_base64: str = Field(default="", max_length=6000000)
     prescription_image_mime_type: str = Field(default="", max_length=50)
@@ -115,4 +116,25 @@ class MedicalAssistantChatResponse(BaseModel):
     data: MedicalAssistantChatResult
     source: Literal["gemini", "fallback"] = "gemini"
     generated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class VoiceReminderCallRequest(BaseModel):
+    to_phone: str = Field(..., min_length=8, max_length=24)
+    patient_name: str = Field(default="", max_length=120)
+    caregiver_name: str = Field(default="", max_length=120)
+    medicine_name: str = Field(..., min_length=1, max_length=120)
+    dosage: str = Field(default="", max_length=120)
+    scheduled_time: str = Field(default="", max_length=40)
+    date_key: str = Field(default="", max_length=20)
+    mode: Literal["caregiver_patient", "self_patient"] = "caregiver_patient"
+
+
+class VoiceReminderCallData(BaseModel):
+    call_sid: str
+    status: str
+
+
+class VoiceReminderCallResponse(BaseModel):
+    ok: bool = True
+    data: VoiceReminderCallData
 

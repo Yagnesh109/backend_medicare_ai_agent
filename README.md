@@ -28,6 +28,11 @@ copy .env.example .env
 Set values in `.env`:
 - `GEMINI_API_KEY`
 - optional: `GEMINI_MODEL`, `ALLOWED_ORIGINS`
+- for Voice reminder calls:
+  - `PUBLIC_BASE_URL` (your deployed backend base URL)
+  - `TWILIO_ACCOUNT_SID`
+  - `TWILIO_AUTH_TOKEN`
+  - `TWILIO_VOICE_FROM_NUMBER`
 
 ## 2) Run locally
 ```bash
@@ -94,4 +99,31 @@ Response body:
 
 ## Important
 This service is decision support only. It is not a diagnosis system.
+
+## 6) Voice reminder call endpoint
+`POST /api/v1/voice/reminder/call`
+
+Example body:
+```json
+{
+  "to_phone": "+9198xxxxxxxx",
+  "patient_name": "Amit",
+  "caregiver_name": "Riya",
+  "medicine_name": "Paracetamol",
+  "dosage": "500mg",
+  "scheduled_time": "9:00 AM",
+  "date_key": "2026-02-28",
+  "mode": "caregiver_patient"
+}
+```
+
+Call flow:
+- Twilio calls patient.
+- TTS says reminder message.
+- Waits up to 60 seconds for response.
+- If speech includes `yes` (or DTMF `1`) => recorded as `taken`.
+- Else => recorded as `missed`.
+
+Check result:
+`GET /api/v1/voice/reminder/result/{call_sid}`
 

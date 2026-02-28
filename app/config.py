@@ -7,6 +7,10 @@ class Settings(BaseSettings):
     gemini_api_base: str = "https://generativelanguage.googleapis.com"
     allowed_origins: str = "*"
     request_timeout_seconds: int = 20
+    public_base_url: str = ""
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+    twilio_voice_from_number: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",
