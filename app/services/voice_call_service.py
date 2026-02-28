@@ -47,6 +47,25 @@ class VoiceCallService:
     def _status_callback_url(self) -> str:
         return f"{self._base()}/api/v1/voice/status"
 
+    def _normalize_phone(self, raw: str) -> str:
+        value = (raw or "").strip()
+        if not value:
+            return ""
+        if value.startswith("+"):
+            digits = "".join(ch for ch in value[1:] if ch.isdigit())
+            return f"+{digits}" if digits else ""
+
+        digits = "".join(ch for ch in value if ch.isdigit())
+        if not digits:
+            return ""
+        # Default India country code for plain 10-digit local numbers.
+        if len(digits) == 10:
+            return f"+91{digits}"
+        # If user provided 91XXXXXXXXXX without '+'.
+        if len(digits) == 12 and digits.startswith("91"):
+            return f"+{digits}"
+        return f"+{digits}"
+
     def place_reminder_call(
         self,
         *,
@@ -75,8 +94,12 @@ class VoiceCallService:
             "mode": mode,
         }
 
+        normalized_to = self._normalize_phone(to_phone)
+        if not normalized_to:
+            raise RuntimeError(f"Invalid destination phone: {to_phone}")
+
         call = self._client().calls.create(
-            to=to_phone,
+            to=normalized_to,
             from_=settings.twilio_voice_from_number,
             url=self._twiml_url(query),
             status_callback=self._status_callback_url(),
@@ -89,7 +112,7 @@ class VoiceCallService:
         with self._lock:
             self._results[call.sid] = VoiceCallResult(
                 call_sid=call.sid,
-                to=to_phone,
+                to=normalized_to,
                 status=str(call.status or "queued"),
                 response="pending",
                 speech_result="",
