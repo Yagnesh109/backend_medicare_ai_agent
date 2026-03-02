@@ -2,6 +2,7 @@ from fastapi import FastAPI, Form, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, Response
 from twilio.twiml.voice_response import Gather, VoiceResponse
+from urllib.parse import urlencode
 
 from app.config import settings
 from app.models import (
@@ -148,12 +149,17 @@ async def voice_twiml(
 
     vr = VoiceResponse()
     base = settings.public_base_url.rstrip("/")
+    gather_query = urlencode(
+        {
+            "patient_name": patient_display,
+            "medicine_name": medicine_display,
+            "scheduled_time": time_display,
+            "date_key": date_display,
+        }
+    )
     gather_action_url = (
         f"{base}/api/v1/voice/gather"
-        f"?patient_name={patient_display}"
-        f"&medicine_name={medicine_display}"
-        f"&scheduled_time={time_display}"
-        f"&date_key={date_display}"
+        f"?{gather_query}"
     )
     gather = Gather(
         input="speech dtmf",
