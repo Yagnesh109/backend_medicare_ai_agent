@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, Response
 from twilio.twiml.voice_response import Gather, VoiceResponse
 from urllib.parse import urlencode
+import re
 
 from app.config import settings
 from app.models import (
@@ -202,7 +203,25 @@ async def voice_gather(
 
     taken = False
     if spoken:
-        if "yes" in spoken or "haan" in spoken or "ha" == spoken:
+        normalized = re.sub(r"[^a-z0-9\s]+", " ", spoken)
+        normalized = re.sub(r"\s+", " ", normalized).strip()
+        yes_tokens = {
+            "yes",
+            "yeah",
+            "yup",
+            "ya",
+            "yas",
+            "haan",
+            "han",
+            "ha",
+            "ji",
+            "ji haan",
+            "taken",
+            "done",
+            "ok",
+            "okay",
+        }
+        if any(token in normalized for token in yes_tokens):
             taken = True
     if pressed == "1":
         taken = True
